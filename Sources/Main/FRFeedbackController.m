@@ -46,27 +46,10 @@
 
 - (void) awakeFromNib
 {
-    [tabConsole retain];
-    [tabCrash retain];
-    [tabScript retain];
-    [tabPreferences retain];
-    [tabException retain];
 }
 
 #pragma mark Destruction
 
-- (void) dealloc
-{
-    [type release];
-
-    [tabConsole release];
-    [tabCrash release];
-    [tabScript release];
-    [tabPreferences release];
-    [tabException release];
-
-    [super dealloc];
-}
 
 
 #pragma mark Accessors
@@ -104,8 +87,7 @@
 - (void) setType:(NSString*)theType
 {
     if (theType != type) {
-        [type release];
-        type = [theType retain];
+        type = theType;
     }
 }
 
@@ -134,7 +116,7 @@
     static NSArray *systemProfile = nil;
 
     if (systemProfile == nil) {
-        systemProfile = [[FRSystemProfile discover] retain];
+        systemProfile = [FRSystemProfile discover];
     }
 
     return systemProfile;
@@ -234,7 +216,6 @@
         [cmd setOutput:scriptLog];
         [cmd setError:scriptLog];
         int ret = [cmd execute];
-        [cmd release];
 
         NSLog(@"Script exit code = %d", ret);
 
@@ -248,7 +229,7 @@
 
 - (NSString*) preferences
 {
-    NSMutableDictionary *preferences = [[[[NSUserDefaults standardUserDefaults] persistentDomainForName:[FRApplication applicationIdentifier]] mutableCopy] autorelease];
+    NSMutableDictionary *preferences = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:[FRApplication applicationIdentifier]] mutableCopy];
 
     if (preferences == nil) {
         return @"";
@@ -440,7 +421,7 @@
     [indicator stopAnimation:self];
     [indicator setHidden:YES];
 
-    [uploader release], uploader = nil;
+    uploader = nil;
 
     [messageView setEditable:YES];
     [sendButton setEnabled:YES];
@@ -451,7 +432,6 @@
     [alert setInformativeText:[NSString stringWithFormat:FRLocalizedString(@"Error: %@", nil), [error localizedDescription]]];
     [alert setAlertStyle:NSWarningAlertStyle];
     [alert runModal];
-    [alert release];
 
     [self close];
 }
@@ -467,7 +447,7 @@
 
     NSString *response = [uploader response];
 
-    [uploader release], uploader = nil;
+    uploader = nil;
 
     [messageView setEditable:YES];
     [sendButton setEnabled:YES];
@@ -491,7 +471,6 @@
             [alert setInformativeText:[NSString stringWithFormat:FRLocalizedString(@"Error: %@", nil), line]];
             [alert setAlertStyle:NSWarningAlertStyle];
             [alert runModal];
-            [alert release];
 
             return;
         }
@@ -572,35 +551,35 @@
 
 - (void) populate
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
 
-    NSString *consoleLog = [self consoleLog];
-    if ([consoleLog length] > 0) {
-        [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabConsole waitUntilDone:YES];
-        [consoleView performSelectorOnMainThread:@selector(setString:) withObject:consoleLog waitUntilDone:YES];
+        NSString *consoleLog = [self consoleLog];
+        if ([consoleLog length] > 0) {
+            [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabConsole waitUntilDone:YES];
+            [consoleView performSelectorOnMainThread:@selector(setString:) withObject:consoleLog waitUntilDone:YES];
+        }
+
+        NSString *crashLog = [self crashLog];
+        if ([crashLog length] > 0) {
+            [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabCrash waitUntilDone:YES];
+            [crashesView performSelectorOnMainThread:@selector(setString:) withObject:crashLog waitUntilDone:YES];
+        }
+
+        NSString *scriptLog = [self scriptLog];
+        if ([scriptLog length] > 0) {
+            [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabScript waitUntilDone:YES];
+            [scriptView performSelectorOnMainThread:@selector(setString:) withObject:scriptLog waitUntilDone:YES];
+        }
+
+        NSString *preferences = [self preferences];
+        if ([preferences length] > 0) {
+            [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabPreferences waitUntilDone:YES];
+            [preferencesView performSelectorOnMainThread:@selector(setString:) withObject:preferences waitUntilDone:YES];
+        }
+
+        [self performSelectorOnMainThread:@selector(stopSpinner) withObject:self waitUntilDone:YES];
+
     }
-
-    NSString *crashLog = [self crashLog];
-    if ([crashLog length] > 0) {
-        [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabCrash waitUntilDone:YES];
-        [crashesView performSelectorOnMainThread:@selector(setString:) withObject:crashLog waitUntilDone:YES];
-    }
-
-    NSString *scriptLog = [self scriptLog];
-    if ([scriptLog length] > 0) {
-        [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabScript waitUntilDone:YES];
-        [scriptView performSelectorOnMainThread:@selector(setString:) withObject:scriptLog waitUntilDone:YES];
-    }
-
-    NSString *preferences = [self preferences];
-    if ([preferences length] > 0) {
-        [self performSelectorOnMainThread:@selector(addTabViewItem:) withObject:tabPreferences waitUntilDone:YES];
-        [preferencesView performSelectorOnMainThread:@selector(setString:) withObject:preferences waitUntilDone:YES];
-    }
-
-    [self performSelectorOnMainThread:@selector(stopSpinner) withObject:self waitUntilDone:YES];
-
-    [pool drain];
 }
 
 - (void) reset

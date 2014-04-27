@@ -31,12 +31,6 @@
     return self;
 }
 
-- (void) dealloc
-{
-    [responseData release];
-    
-    [super dealloc];
-}
 
 - (NSData *) generateFormData: (NSDictionary *)dict forBoundary:(NSString*)formBoundary
 {
@@ -66,7 +60,7 @@
 
     [result appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     
-    return [result autorelease];
+    return result;
 }
 
 
@@ -96,8 +90,8 @@
         NSLog(@"Post failed. Error: %ld, Description: %@", (long)[error code], [error localizedDescription]);
     }
 
-    return [[[NSString alloc] initWithData:result
-                                  encoding:NSUTF8StringEncoding] autorelease];
+    return [[NSString alloc] initWithData:result
+                                  encoding:NSUTF8StringEncoding];
 }
 
 - (void) postAndNotify:(NSDictionary*)dict
@@ -154,7 +148,7 @@
         [delegate performSelector:@selector(uploaderFailed:withError:) withObject:self withObject:error];
     }
         
-    [connection autorelease];
+    //[connection autorelease];
 }
 
 - (void) connectionDidFinishLoading: (NSURLConnection *)pConnection
@@ -167,20 +161,20 @@
         [delegate performSelector:@selector(uploaderFinished:) withObject:self];
     }
     
-    [connection autorelease];
+    //[connection autorelease];
 }
 
 
 - (void) cancel
 {
     [connection cancel];
-    [connection autorelease], connection = nil;
+    connection = nil;
 }
 
 - (NSString*) response
 {
-    return [[[NSString alloc] initWithData:responseData
-                                  encoding:NSUTF8StringEncoding] autorelease];
+    return [[NSString alloc] initWithData:responseData
+                                  encoding:NSUTF8StringEncoding];
 }
 
 @end
